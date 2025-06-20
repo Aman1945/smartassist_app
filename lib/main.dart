@@ -13,7 +13,7 @@ import 'package:smartassist/services/notifacation_srv.dart';
 import 'package:smartassist/utils/connection_service.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized(); //
 
   try {
     await Firebase.initializeApp();
