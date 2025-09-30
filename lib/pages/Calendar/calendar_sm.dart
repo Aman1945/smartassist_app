@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:smartassist/config/component/color/colors.dart';
+import 'package:smartassist/config/component/font/font.dart';
 import 'package:smartassist/config/getX/fab.controller.dart';
 import 'package:smartassist/pages/Home/single_details_pages/singleLead_followup.dart';
 import 'package:smartassist/utils/storage.dart';
@@ -337,8 +338,8 @@ class _CalendarSmState extends State<CalendarSm> {
               width: double.infinity,
               child: Text(
                 DateFormat('EEEE, MMMM d').format(_selectedDay ?? _focusedDay),
-                style: const TextStyle(
-                  fontSize: 18,
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -818,17 +819,11 @@ class _CalendarSmState extends State<CalendarSm> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 8, bottom: 2),
-                child: Text(
-                  timeKey,
-                  style: TextStyle(
-                    color: Colors.grey.shade700,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                ),
+              Container(
+                margin: const EdgeInsets.only(left: 8, bottom: 5),
+                child: Text(timeKey, style: AppFont.dropDowmLabel(context)),
               ),
+
               ...displayItems.map(
                 (item) => Padding(
                   padding: const EdgeInsets.only(bottom: 8.0),
@@ -1018,8 +1013,9 @@ class _CalendarSmState extends State<CalendarSm> {
                           Icon(
                             Icons.circle,
                             size: 6,
-                            color: Colors.grey.shade400,
+                            color: AppColors.iconGrey,
                           ),
+                          SizedBox(width: 4),
                           Transform.translate(
                             offset: Offset(-5, 0),
                             child: Padding(
@@ -1040,8 +1036,9 @@ class _CalendarSmState extends State<CalendarSm> {
                           Icon(
                             Icons.circle,
                             size: 6,
-                            color: Colors.grey.shade400,
+                            color: AppColors.iconGrey,
                           ),
+                          SizedBox(width: 4),
                           Text(
                             timeStr,
                             style: GoogleFonts.poppins(
