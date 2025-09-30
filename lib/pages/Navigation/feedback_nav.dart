@@ -544,10 +544,12 @@ class _FeedbackFormState extends State<FeedbackForm> {
 
   void _showSuccessDialog() {
     showDialog(
+      // barrierColor: AppColors.white,
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: AppColors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
