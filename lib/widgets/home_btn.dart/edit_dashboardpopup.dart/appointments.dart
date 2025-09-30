@@ -236,6 +236,7 @@ class _AppointmentsEditState extends State<AppointmentsEdit> {
       // Enable button if any field changed and all validations pass
       isButtonEnabled =
           (statusChanged ||
+              remarksChanged ||
               startDateChanged ||
               startTimeChanged ||
               deferredReasonChanged) &&
@@ -374,9 +375,9 @@ class _AppointmentsEditState extends State<AppointmentsEdit> {
       'comments': descriptionController.text,
       'status': selectedValue,
       'sp_id': spId,
-      'due_date': dueDate != null
-          ? DateFormat('dd-MM-yyyy').format(dueDate)
-          : '',
+      // 'due_date': dueDate != null
+      //     ? DateFormat('dd/MM/yyyy').format(dueDate)
+      //     : '',
       'time': startTimeController.text,
       'end_time': endTimeController.text,
       if (selectedValue == 'Deferred' && selectedDeferredReason != null)
