@@ -272,173 +272,233 @@ class _FeedbackFormState extends State<FeedbackForm> {
   }
 
   // Separate method to upload media files
-  Future<String?> _uploadMediaFiles() async {
-    if (_selectedFiles.isEmpty) {
-      print('DEBUG: No files selected for upload');
-      return null;
-    }
-
-    print('DEBUG: Starting media upload for ${_selectedFiles.length} files');
+  Future<List<String>?> _uploadMediaFiles() async {
+    if (_selectedFiles.isEmpty) return null;
 
     try {
       final token = await Storage.getToken();
-      if (token == null) {
-        print('DEBUG: No token available');
-        return null;
-      }
+      if (token == null) return null;
 
-      print('DEBUG: Token retrieved successfully');
-
-      // Create multipart request for file upload
       var uri = Uri.parse(
         'https://api.smartassistapp.in/api/issues/media/upload',
       );
       var request = http.MultipartRequest('POST', uri);
-
-      // Add headers
       request.headers['Authorization'] = 'Bearer $token';
-      print('DEBUG: Request headers set: ${request.headers}');
 
-      // Add files
-      for (int i = 0; i < _selectedFiles.length; i++) {
-        final file = _selectedFiles[i];
+      for (final file in _selectedFiles) {
         final fileName = file.path.split('/').last;
-
-        print('DEBUG: Processing file $i: $fileName');
-        print('DEBUG: File path: ${file.path}');
-        print('DEBUG: File exists: ${await file.exists()}');
-
         if (await file.exists()) {
-          final fileSize = await file.length();
-          print('DEBUG: File size: ${_formatFileSize(fileSize)}');
-
-          // Better MIME type detection
           final extension = fileName.split('.').last.toLowerCase();
-          String mimeType;
+          String mimeType = (['jpg', 'jpeg'].contains(extension))
+              ? 'image/jpeg'
+              : extension == 'png'
+              ? 'image/png'
+              : extension == 'gif'
+              ? 'image/gif'
+              : extension == 'webp'
+              ? 'image/webp'
+              : 'application/octet-stream';
 
-          if (['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm'].contains(extension)) {
-            mimeType = 'video/$extension';
-          } else if (['jpg', 'jpeg'].contains(extension)) {
-            mimeType = 'image/jpeg';
-          } else if (extension == 'png') {
-            mimeType = 'image/png';
-          } else if (extension == 'gif') {
-            mimeType = 'image/gif';
-          } else if (extension == 'webp') {
-            mimeType = 'image/webp';
-          } else {
-            mimeType = 'application/octet-stream';
-          }
-
-          print('DEBUG: Detected MIME type: $mimeType');
-
-          try {
-            final multipartFile = await http.MultipartFile.fromPath(
-              'file',
-              file.path,
-              filename: fileName,
-              contentType: MediaType.parse(mimeType),
-            );
-
-            request.files.add(multipartFile);
-            print('Filename: ${multipartFile.filename}');
-            print('Content-Type: ${multipartFile.contentType}');
-            print('Length: ${multipartFile.length}');
-            print('Field: ${multipartFile.field}');
-            print('DEBUG: File $i added to request successfully');
-          } catch (fileError) {
-            print('DEBUG: Error adding file $i to request: $fileError');
-            _showErrorDialog('Error processing file: $fileName');
-            return null;
-          }
+          final multipartFile = await http.MultipartFile.fromPath(
+            'file',
+            file.path,
+            filename: fileName,
+            contentType: MediaType.parse(mimeType),
+          );
+          request.files.add(multipartFile);
         } else {
-          print('DEBUG: File does not exist: ${file.path}');
           _showErrorDialog('File not found: $fileName');
           return null;
         }
       }
 
-      print(
-        'DEBUG: All files processed. Total files in request: ${request.files.length}',
-      );
-      print('DEBUG: Request fields: ${request.fields}');
-      print('DEBUG: Sending request to: $uri');
-
       final response = await request.send();
       final responseBody = await response.stream.bytesToString();
 
-      print('DEBUG: Response status code: ${response.statusCode}');
-      print('DEBUG: Response headers: ${response.headers}');
-      print('DEBUG: Response body: $responseBody');
-
       if (response.statusCode == 200 || response.statusCode == 201) {
-        try {
-          // Parse response to get media URL from the data field
-          final jsonResponse = jsonDecode(responseBody);
-          print('DEBUG: Parsed JSON response: $jsonResponse');
-
-          if (jsonResponse['status'] == 200 && jsonResponse['data'] != null) {
-            print(
-              'DEBUG: Media upload successful. URL: ${jsonResponse['data']}',
-            );
-            return jsonResponse['data']; // Returns the S3 URL
-          } else {
-            print(
-              'DEBUG: Media upload failed - API returned error: ${jsonResponse['message'] ?? 'Unknown error'}',
-            );
-            return null;
-          }
-        } catch (jsonError) {
-          print('DEBUG: Error parsing JSON response: $jsonError');
-          print('DEBUG: Raw response body: $responseBody');
-          return null;
+        final jsonResponse = jsonDecode(responseBody);
+        if (jsonResponse['status'] == 200 && jsonResponse['data'] != null) {
+          // Return the list of URLs
+          return List<String>.from(jsonResponse['data']);
         }
-      } else {
-        print('DEBUG: Media upload failed with status ${response.statusCode}');
-        print('DEBUG: Error response body: $responseBody');
-        return null;
       }
-    } catch (e, stackTrace) {
-      print('DEBUG: Media upload error: $e');
-      print('DEBUG: Stack trace: $stackTrace');
+
+      return null;
+    } catch (e) {
+      print('Upload error: $e');
       return null;
     }
   }
 
+  // Future<String?> _uploadMediaFiles() async {
+  //   if (_selectedFiles.isEmpty) {
+  //     // print('DEBUG: No files selected for upload');
+  //     return null;
+  //   }
+
+  //   print('DEBUG: Starting media upload for ${_selectedFiles.length} files');
+
+  //   try {
+  //     final token = await Storage.getToken();
+  //     if (token == null) {
+  //       // print('DEBUG: No token available');
+  //       return null;
+  //     }
+
+  //     // print('DEBUG: Token retrieved successfully');
+
+  //     // Create multipart request for file upload
+  //     var uri = Uri.parse(
+  //       'https://api.smartassistapp.in/api/issues/media/upload',
+  //     );
+  //     var request = http.MultipartRequest('POST', uri);
+
+  //     // Add headers
+  //     request.headers['Authorization'] = 'Bearer $token';
+  //     print('DEBUG: Request headers set: ${request.headers}');
+
+  //     // Add files
+  //     for (int i = 0; i < _selectedFiles.length; i++) {
+  //       final file = _selectedFiles[i];
+  //       final fileName = file.path.split('/').last;
+
+  //       print('DEBUG: Processing file $i: $fileName');
+  //       print('DEBUG: File path: ${file.path}');
+  //       print('DEBUG: File exists: ${await file.exists()}');
+
+  //       if (await file.exists()) {
+  //         final fileSize = await file.length();
+  //         print('DEBUG: File size: ${_formatFileSize(fileSize)}');
+
+  //         // Better MIME type detection
+  //         final extension = fileName.split('.').last.toLowerCase();
+  //         String mimeType;
+
+  //         if (['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm'].contains(extension)) {
+  //           mimeType = 'video/$extension';
+  //         } else if (['jpg', 'jpeg'].contains(extension)) {
+  //           mimeType = 'image/jpeg';
+  //         } else if (extension == 'png') {
+  //           mimeType = 'image/png';
+  //         } else if (extension == 'gif') {
+  //           mimeType = 'image/gif';
+  //         } else if (extension == 'webp') {
+  //           mimeType = 'image/webp';
+  //         } else {
+  //           mimeType = 'application/octet-stream';
+  //         }
+
+  //         print('DEBUG: Detected MIME type: $mimeType');
+
+  //         try {
+  //           final multipartFile = await http.MultipartFile.fromPath(
+  //             'file',
+  //             file.path,
+  //             filename: fileName,
+  //             contentType: MediaType.parse(mimeType),
+  //           );
+
+  //           request.files.add(multipartFile);
+  //           print('Filename: ${multipartFile.filename}');
+  //           print('Content-Type: ${multipartFile.contentType}');
+  //           print('Length: ${multipartFile.length}');
+  //           print('Field: ${multipartFile.field}');
+  //           print('DEBUG: File $i added to request successfully');
+  //         } catch (fileError) {
+  //           print('DEBUG: Error adding file $i to request: $fileError');
+  //           _showErrorDialog('Error processing file: $fileName');
+  //           return null;
+  //         }
+  //       } else {
+  //         print('DEBUG: File does not exist: ${file.path}');
+  //         _showErrorDialog('File not found: $fileName');
+  //         return null;
+  //       }
+  //     }
+
+  //     print(
+  //       'DEBUG: All files processed. Total files in request: ${request.files.length}',
+  //     );
+  //     print('DEBUG: Request fields: ${request.fields}');
+  //     print('DEBUG: Sending request to: $uri');
+
+  //     final response = await request.send();
+  //     final responseBody = await response.stream.bytesToString();
+
+  //     print('DEBUG: Response status code: ${response.statusCode}');
+  //     print('DEBUG: Response headers: ${response.headers}');
+  //     print('DEBUG: Response body: $responseBody');
+
+  //     if (response.statusCode == 200 || response.statusCode == 201) {
+  //       try {
+  //         // Parse response to get media URL from the data field
+  //         final jsonResponse = jsonDecode(responseBody);
+  //         print('DEBUG: Parsed JSON response: $jsonResponse');
+
+  //         if (jsonResponse['status'] == 200 && jsonResponse['data'] != null) {
+  //           print(
+  //             'DEBUG: Media upload successful. URL: ${jsonResponse['data']}',
+  //           );
+  //           return jsonResponse['data']; // Returns the S3 URL
+  //         } else {
+  //           print(
+  //             'DEBUG: Media upload failed - API returned error: ${jsonResponse['message'] ?? 'Unknown error'}',
+  //           );
+  //           return null;
+  //         }
+  //       } catch (jsonError) {
+  //         print('DEBUG: Error parsing JSON response: $jsonError');
+  //         print('DEBUG: Raw response body: $responseBody');
+  //         return null;
+  //       }
+  //     } else {
+  //       print('DEBUG: Media upload failed with status ${response.statusCode}');
+  //       print('DEBUG: Error response body: $responseBody');
+  //       return null;
+  //     }
+  //   } catch (e, stackTrace) {
+  //     print('DEBUG: Media upload error: $e');
+  //     print('DEBUG: Stack trace: $stackTrace');
+  //     return null;
+  //   }
+  // }
+
   Future<void> _submitFeedback() async {
     if (!_formKey.currentState!.validate()) {
-      print('DEBUG: Form validation failed');
+      // print('DEBUG: Form validation failed');
       return;
     }
-
-    print('DEBUG: Starting feedback submission');
-    print('DEBUG: Selected files count: ${_selectedFiles.length}');
-    print('DEBUG: Form data - Subject: ${_titleController.text.trim()}');
-    print('DEBUG: Form data - Category: $_selectedCategory');
-    print('DEBUG: Form data - Description: ${_feedbackController.text.trim()}');
 
     setState(() {
       _isSubmitting = true;
     });
 
     try {
-      String? mediaUrl;
-
-      // First upload media files if any
+      // String? mediaUrl;
+      List<String>? mediaUrls;
       if (_selectedFiles.isNotEmpty) {
-        print('DEBUG: Uploading media files...');
-        mediaUrl = await _uploadMediaFiles();
-
-        if (mediaUrl == null) {
-          print('DEBUG: Media upload failed, stopping submission');
+        mediaUrls = await _uploadMediaFiles();
+        if (mediaUrls == null) {
           _showErrorDialog('Failed to upload media files. Please try again.');
           return;
         }
-
-        print('DEBUG: Media upload successful. URL: $mediaUrl');
-      } else {
-        print('DEBUG: No media files to upload');
       }
+
+      // First upload media files if any
+      // if (_selectedFiles.isNotEmpty) {
+      //   // print('DEBUG: Uploading media files...');
+      //   mediaUrl = await _uploadMediaFiles();
+
+      //   if (mediaUrl == null) {
+      //     // print('DEBUG: Media upload failed, stopping submission');
+      //     _showErrorDialog('Failed to upload media files. Please try again.');
+      //     return;
+      //   }
+
+      //   // print('DEBUG: Media upload successful. URL: $mediaUrl');
+      // } else {
+      //   print('DEBUG: No media files to upload');
+      // }
 
       // Then submit the bug report using the service
       print('DEBUG: Submitting bug report...');
@@ -446,7 +506,8 @@ class _FeedbackFormState extends State<FeedbackForm> {
         subject: _titleController.text.trim(),
         category: _selectedCategory,
         description: _feedbackController.text.trim(),
-        media: mediaUrl,
+        // media: mediaUrl,
+        media: mediaUrls?.join(','),
       );
 
       print('DEBUG: Bug report API result: $result');
