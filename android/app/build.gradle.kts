@@ -34,7 +34,7 @@ android {
     defaultConfig {
         applicationId = "com.smartassist.app"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true

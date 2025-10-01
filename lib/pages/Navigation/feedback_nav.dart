@@ -1,422 +1,9 @@
-// import 'package:flutter/material.dart';
-// import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-// import 'package:google_fonts/google_fonts.dart';
-// import 'package:smartassist/config/component/color/colors.dart';
-// import 'package:http/http.dart' as http;
-// import 'package:smartassist/utils/storage.dart';
-// import 'package:smartassist/services/bugReport_srv.dart';
-// import 'package:http_parser/http_parser.dart';
-// import 'dart:io';
-// import 'package:image_picker/image_picker.dart';
-
-// class FeedbackForm extends StatefulWidget {
-//   final String userId;
-//   final String userName;
-//   final bool isFromSM;
-
-//   const FeedbackForm({
-//     super.key,
-//     required this.userId,
-//     this.isFromSM = false,
-//     required this.userName,
-//   });
-
-//   @override
-//   State<FeedbackForm> createState() => _FeedbackFormState();
-// }
-
-// class _FeedbackFormState extends State<FeedbackForm> {
-//   final _formKey = GlobalKey<FormState>();
-//   final _feedbackController = TextEditingController();
-//   final _titleController = TextEditingController();
-
-//   String _selectedCategory = 'Login';
-//   bool _isSubmitting = false;
-//   List<File> _selectedFiles = [];
-//   bool _isPickingFiles = false;
-
-//   final List<String> _categories = [
-//     'Login',
-//     'Dashboard',
-//     'Profile',
-//     'Enquiries',
-//     'Test drives',
-//     'Follow-ups',
-//     'Appointments',
-//     'Call Analysis',
-//     'WhatsApp',
-//     'Analytics',
-//     'Other',
-//   ];
-
-//   @override
-//   void dispose() {
-//     _feedbackController.dispose();
-//     _titleController.dispose();
-//     _selectedFiles.clear();
-//     super.dispose();
-//   }
-
-//   // Helper methods to get responsive dimensions - moved to methods to avoid context issues
-//   bool _isTablet(BuildContext context) =>
-//       MediaQuery.of(context).size.width > 768;
-//   bool _isSmallScreen(BuildContext context) =>
-//       MediaQuery.of(context).size.width < 400;
-//   double _screenWidth(BuildContext context) =>
-//       MediaQuery.of(context).size.width;
-
-//   // Responsive padding
-//   EdgeInsets _responsivePadding(BuildContext context) => EdgeInsets.symmetric(
-//     horizontal: _isTablet(context) ? 20 : (_isSmallScreen(context) ? 8 : 10),
-//     vertical: _isTablet(context) ? 12 : 8,
-//   );
-
-//   // Responsive font sizes
-//   double _titleFontSize(BuildContext context) =>
-//       _isTablet(context) ? 20 : (_isSmallScreen(context) ? 16 : 18);
-//   double _bodyFontSize(BuildContext context) =>
-//       _isTablet(context) ? 16 : (_isSmallScreen(context) ? 12 : 14);
-//   double _smallFontSize(BuildContext context) =>
-//       _isTablet(context) ? 14 : (_isSmallScreen(context) ? 10 : 12);
-
-//   Future<void> _pickFiles() async {
-//     setState(() {
-//       _isPickingFiles = true;
-//     });
-
-//     try {
-//       final ImagePicker picker = ImagePicker();
-
-//       // Show options dialog
-//       final result = await showDialog<String>(
-//         context: context,
-//         builder: (BuildContext context) {
-//           return AlertDialog(
-//             title: Text(
-//               'Select Media Type',
-//               style: GoogleFonts.poppins(
-//                 fontSize: _titleFontSize(context),
-//                 fontWeight: FontWeight.w600,
-//               ),
-//             ),
-//             content: Column(
-//               mainAxisSize: MainAxisSize.min,
-//               children: [
-//                 ListTile(
-//                   leading: Icon(Icons.photo, color: AppColors.colorsBlue),
-//                   title: Text('Photo', style: GoogleFonts.poppins()),
-//                   onTap: () => Navigator.of(context).pop('image'),
-//                 ),
-//                 ListTile(
-//                   leading: Icon(Icons.videocam, color: AppColors.colorsBlue),
-//                   title: Text('Video', style: GoogleFonts.poppins()),
-//                   onTap: () => Navigator.of(context).pop('video'),
-//                 ),
-//                 ListTile(
-//                   leading: Icon(Icons.photo_library, color: AppColors.colorsBlue),
-//                   title: Text('Multiple Photos', style: GoogleFonts.poppins()),
-//                   onTap: () => Navigator.of(context).pop('multiple'),
-//                 ),
-//               ],
-//             ),
-//           );
-//         },
-//       );
-
-//       if (result != null) {
-//         List<XFile> pickedFiles = [];
-
-//         switch (result) {
-//           case 'image':
-//             final XFile? image = await picker.pickImage(
-//               source: ImageSource.gallery,
-//               maxWidth: 1920,
-//               maxHeight: 1080,
-//               imageQuality: 85,
-//             );
-//             if (image != null) pickedFiles.add(image);
-//             break;
-
-//           case 'video':
-//             final XFile? video = await picker.pickVideo(
-//               source: ImageSource.gallery,
-//               maxDuration: Duration(minutes: 5),
-//             );
-//             if (video != null) pickedFiles.add(video);
-//             break;
-
-//           case 'multiple':
-//             pickedFiles = await picker.pickMultipleMedia(
-//               maxWidth: 1920,
-//               maxHeight: 1080,
-//               imageQuality: 85,
-//             );
-//             break;
-//         }
-
-//         if (pickedFiles.isNotEmpty) {
-//           // Check file size limit (10MB per file)
-//           const int maxFileSize = 10 * 1024 * 1024; // 10MB
-//           List<File> validFiles = [];
-
-//           for (XFile file in pickedFiles) {
-//             final fileSize = await file.length();
-//             if (fileSize <= maxFileSize) {
-//               validFiles.add(File(file.path));
-//             } else {
-//               _showErrorDialog(
-//                 'File ${file.name} is too large. Maximum size is 10MB.',
-//               );
-//             }
-//           }
-
-//           setState(() {
-//             _selectedFiles.addAll(validFiles);
-//             // Limit to 5 files total
-//             if (_selectedFiles.length > 5) {
-//               _selectedFiles = _selectedFiles.take(5).toList();
-//               _showErrorDialog(
-//                 'Maximum 5 files allowed. Only first 5 files were selected.',
-//               );
-//             }
-//           });
-//         }
-//       }
-//     } catch (e) {
-//       _showErrorDialog('Error picking files: ${e.toString()}');
-//     } finally {
-//       setState(() {
-//         _isPickingFiles = false;
-//       });
-//     }
-//   }
-
-//   void _removeFile(int index) {
-//     setState(() {
-//       _selectedFiles.removeAt(index);
-//     });
-//   }
-
-//   String _getFileTypeIcon(String path) {
-//     final extension = path.split('.').last.toLowerCase();
-//     if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].contains(extension)) {
-//       return '📷';
-//     } else if ([
-//       'mp4',
-//       'avi',
-//       'mov',
-//       'wmv',
-//       'flv',
-//       'webm',
-//     ].contains(extension)) {
-//       return '🎥';
-//     }
-//     return '📄';
-//   }
-
-//   String _formatFileSize(int bytes) {
-//     if (bytes < 1024) return '${bytes}B';
-//     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)}KB';
-//     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB';
-//   }
-
-//   Future<void> _submitFeedback() async {
-//     if (!_formKey.currentState!.validate()) {
-//       return;
-//     }
-
-//     setState(() {
-//       _isSubmitting = true;
-//     });
-
-//     try {
-//       final token = await Storage.getToken();
-
-//       // Create multipart request for file upload
-//       var uri = Uri.parse('https://api.smartassistapp.in/api/issues/media/upload');
-//       var request = http.MultipartRequest('POST', uri);
-
-//       // Add headers
-//       request.headers['Authorization'] = 'Bearer $token';
-//       request.headers['Content-Type'] = 'application/json';
-
-//       // Add text fields
-//       request.fields['userId'] = widget.userId;
-//       request.fields['subject'] = _titleController.text.trim();
-//       request.fields['category'] = _selectedCategory;
-//       request.fields['description'] = _feedbackController.text.trim();
-//       request.fields['timestamp'] = DateTime.now().toIso8601String();
-
-//       // Add files
-//       for (int i = 0; i < _selectedFiles.length; i++) {
-//         final file = _selectedFiles[i];
-//         final fileName = file.path.split('/').last;
-//         final mimeType = fileName.contains('.mp4') || fileName.contains('.mov')
-//             ? 'video/mp4'
-//             : 'image/jpeg';
-
-//         request.files.add(
-//           await http.MultipartFile.fromPath(
-//             'attachments', // field name for files
-//             file.path,
-//             filename: fileName,
-//             contentType: MediaType.parse(mimeType),
-//           ),
-//         );
-//       }
-
-//       final response = await request.send();
-//       final responseBody = await response.stream.bytesToString();
-
-//       if (response.statusCode == 200 || response.statusCode == 201) {
-//         _showSuccessDialog();
-//       } else {
-//         _showErrorDialog('Failed to submit feedback. Please try again.');
-//       }
-//     } catch (e) {
-//       _showErrorDialog(
-//         'Network error. Please check your connection and try again.',
-//       );
-//     } finally {
-//       if (mounted) {
-//         setState(() {
-//           _isSubmitting = false;
-//         });
-//       }
-//     }
-//   }
-
-//   void _showSuccessDialog() {
-//     showDialog(
-//       context: context,
-//       barrierDismissible: false,
-//       builder: (BuildContext context) {
-//         return AlertDialog(
-//           shape: RoundedRectangleBorder(
-//             borderRadius: BorderRadius.circular(12),
-//           ),
-//           title: Row(
-//             children: [
-//               Icon(
-//                 Icons.check_circle,
-//                 color: Colors.green,
-//                 size: _isTablet(context) ? 28 : 24,
-//               ),
-//               SizedBox(width: 8),
-//               Text(
-//                 'Thank You!',
-//                 style: GoogleFonts.poppins(
-//                   fontSize: _titleFontSize(context),
-//                   fontWeight: FontWeight.w600,
-//                   color: Colors.green,
-//                 ),
-//               ),
-//             ],
-//           ),
-//           content: Text(
-//             'Your feedback has been submitted successfully. We appreciate your input and will review it shortly.',
-//             style: GoogleFonts.poppins(
-//               fontSize: _bodyFontSize(context),
-//               color: Colors.grey[700],
-//             ),
-//           ),
-//           actions: [
-//             TextButton(
-//               onPressed: () {
-//                 Navigator.of(context).pop(); // Close dialog
-//                 Navigator.of(context).pop(); // Go back to previous screen
-//               },
-//               style: TextButton.styleFrom(
-//                 backgroundColor: AppColors.colorsBlue,
-//                 foregroundColor: Colors.white,
-//                 shape: RoundedRectangleBorder(
-//                   borderRadius: BorderRadius.circular(8),
-//                 ),
-//                 padding: EdgeInsets.symmetric(
-//                   horizontal: _isTablet(context) ? 24 : 16,
-//                   vertical: _isTablet(context) ? 12 : 8,
-//                 ),
-//               ),
-//               child: Text(
-//                 'OK',
-//                 style: TextStyle(
-//                   fontSize: _bodyFontSize(context),
-//                   fontWeight: FontWeight.w500,
-//                 ),
-//               ),
-//             ),
-//           ],
-//         );
-//       },
-//     );
-//   }
-
-//   void _showErrorDialog(String message) {
-//     showDialog(
-//       context: context,
-//       builder: (BuildContext context) {
-//         return AlertDialog(
-//           shape: RoundedRectangleBorder(
-//             borderRadius: BorderRadius.circular(12),
-//           ),
-//           title: Row(
-//             children: [
-//               Icon(
-//                 Icons.error,
-//                 color: Colors.red,
-//                 size: _isTablet(context) ? 28 : 24,
-//               ),
-//               SizedBox(width: 8),
-//               Text(
-//                 'Error',
-//                 style: GoogleFonts.poppins(
-//                   fontSize: _titleFontSize(context),
-//                   fontWeight: FontWeight.w600,
-//                   color: Colors.red,
-//                 ),
-//               ),
-//             ],
-//           ),
-//           content: Text(
-//             message,
-//             style: GoogleFonts.poppins(
-//               fontSize: _bodyFontSize(context),
-//               color: Colors.grey[700],
-//             ),
-//           ),
-//           actions: [
-//             TextButton(
-//               onPressed: () => Navigator.of(context).pop(),
-//               style: TextButton.styleFrom(
-//                 backgroundColor: Colors.red,
-//                 foregroundColor: Colors.white,
-//                 shape: RoundedRectangleBorder(
-//                   borderRadius: BorderRadius.circular(8),
-//                 ),
-//                 padding: EdgeInsets.symmetric(
-//                   horizontal: _isTablet(context) ? 24 : 16,
-//                   vertical: _isTablet(context) ? 12 : 8,
-//                 ),
-//               ),
-//               child: Text(
-//                 'OK',
-//                 style: TextStyle(
-//                   fontSize: _bodyFontSize(context),
-//                   fontWeight: FontWeight.w500,
-//                 ),
-//               ),
-//             ),
-//           ],
-//         );
-//       },
-//     );
-//   }
-
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:smartassist/config/component/color/colors.dart';
 import 'package:http/http.dart' as http;
+import 'package:smartassist/utils/bottom_navigation.dart';
 import 'package:smartassist/utils/storage.dart';
 import 'package:smartassist/services/bugReport_srv.dart';
 import 'package:http_parser/http_parser.dart';
@@ -685,169 +272,233 @@ class _FeedbackFormState extends State<FeedbackForm> {
   }
 
   // Separate method to upload media files
-  Future<String?> _uploadMediaFiles() async {
-    if (_selectedFiles.isEmpty) {
-      print('DEBUG: No files selected for upload');
-      return null;
-    }
-
-    print('DEBUG: Starting media upload for ${_selectedFiles.length} files');
+  Future<List<String>?> _uploadMediaFiles() async {
+    if (_selectedFiles.isEmpty) return null;
 
     try {
       final token = await Storage.getToken();
-      if (token == null) {
-        print('DEBUG: No token available');
-        return null;
-      }
+      if (token == null) return null;
 
-      print('DEBUG: Token retrieved successfully');
-
-      // Create multipart request for file upload
       var uri = Uri.parse(
         'https://api.smartassistapp.in/api/issues/media/upload',
       );
       var request = http.MultipartRequest('POST', uri);
-
-      // Add headers
       request.headers['Authorization'] = 'Bearer $token';
-      print('DEBUG: Request headers set: ${request.headers}');
 
-      // Add files
-      for (int i = 0; i < _selectedFiles.length; i++) {
-        final file = _selectedFiles[i];
+      for (final file in _selectedFiles) {
         final fileName = file.path.split('/').last;
-
-        print('DEBUG: Processing file $i: $fileName');
-        print('DEBUG: File path: ${file.path}');
-        print('DEBUG: File exists: ${await file.exists()}');
-
         if (await file.exists()) {
-          final fileSize = await file.length();
-          print('DEBUG: File size: ${_formatFileSize(fileSize)}');
-
-          // Better MIME type detection
           final extension = fileName.split('.').last.toLowerCase();
-          String mimeType;
+          String mimeType = (['jpg', 'jpeg'].contains(extension))
+              ? 'image/jpeg'
+              : extension == 'png'
+              ? 'image/png'
+              : extension == 'gif'
+              ? 'image/gif'
+              : extension == 'webp'
+              ? 'image/webp'
+              : 'application/octet-stream';
 
-          if (['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm'].contains(extension)) {
-            mimeType = 'video/$extension';
-          } else if (['jpg', 'jpeg'].contains(extension)) {
-            mimeType = 'image/jpeg';
-          } else if (extension == 'png') {
-            mimeType = 'image/png';
-          } else if (extension == 'gif') {
-            mimeType = 'image/gif';
-          } else if (extension == 'webp') {
-            mimeType = 'image/webp';
-          } else {
-            mimeType = 'application/octet-stream';
-          }
-
-          print('DEBUG: Detected MIME type: $mimeType');
-
-          try {
-            final multipartFile = await http.MultipartFile.fromPath(
-              'file',
-              file.path,
-              filename: fileName,
-              contentType: MediaType.parse(mimeType),
-            );
-
-            request.files.add(multipartFile);
-            print('DEBUG: File $i added to request successfully');
-          } catch (fileError) {
-            print('DEBUG: Error adding file $i to request: $fileError');
-            _showErrorDialog('Error processing file: $fileName');
-            return null;
-          }
+          final multipartFile = await http.MultipartFile.fromPath(
+            'file',
+            file.path,
+            filename: fileName,
+            contentType: MediaType.parse(mimeType),
+          );
+          request.files.add(multipartFile);
         } else {
-          print('DEBUG: File does not exist: ${file.path}');
           _showErrorDialog('File not found: $fileName');
           return null;
         }
       }
 
-      print(
-        'DEBUG: All files processed. Total files in request: ${request.files.length}',
-      );
-      print('DEBUG: Request fields: ${request.fields}');
-      print('DEBUG: Sending request to: $uri');
-
       final response = await request.send();
       final responseBody = await response.stream.bytesToString();
 
-      print('DEBUG: Response status code: ${response.statusCode}');
-      print('DEBUG: Response headers: ${response.headers}');
-      print('DEBUG: Response body: $responseBody');
-
       if (response.statusCode == 200 || response.statusCode == 201) {
-        try {
-          // Parse response to get media URL from the data field
-          final jsonResponse = jsonDecode(responseBody);
-          print('DEBUG: Parsed JSON response: $jsonResponse');
-
-          if (jsonResponse['status'] == 200 && jsonResponse['data'] != null) {
-            print(
-              'DEBUG: Media upload successful. URL: ${jsonResponse['data']}',
-            );
-            return jsonResponse['data']; // Returns the S3 URL
-          } else {
-            print(
-              'DEBUG: Media upload failed - API returned error: ${jsonResponse['message'] ?? 'Unknown error'}',
-            );
-            return null;
-          }
-        } catch (jsonError) {
-          print('DEBUG: Error parsing JSON response: $jsonError');
-          print('DEBUG: Raw response body: $responseBody');
-          return null;
+        final jsonResponse = jsonDecode(responseBody);
+        if (jsonResponse['status'] == 200 && jsonResponse['data'] != null) {
+          // Return the list of URLs
+          return List<String>.from(jsonResponse['data']);
         }
-      } else {
-        print('DEBUG: Media upload failed with status ${response.statusCode}');
-        print('DEBUG: Error response body: $responseBody');
-        return null;
       }
-    } catch (e, stackTrace) {
-      print('DEBUG: Media upload error: $e');
-      print('DEBUG: Stack trace: $stackTrace');
+
+      return null;
+    } catch (e) {
+      print('Upload error: $e');
       return null;
     }
   }
 
+  // Future<String?> _uploadMediaFiles() async {
+  //   if (_selectedFiles.isEmpty) {
+  //     // print('DEBUG: No files selected for upload');
+  //     return null;
+  //   }
+
+  //   print('DEBUG: Starting media upload for ${_selectedFiles.length} files');
+
+  //   try {
+  //     final token = await Storage.getToken();
+  //     if (token == null) {
+  //       // print('DEBUG: No token available');
+  //       return null;
+  //     }
+
+  //     // print('DEBUG: Token retrieved successfully');
+
+  //     // Create multipart request for file upload
+  //     var uri = Uri.parse(
+  //       'https://api.smartassistapp.in/api/issues/media/upload',
+  //     );
+  //     var request = http.MultipartRequest('POST', uri);
+
+  //     // Add headers
+  //     request.headers['Authorization'] = 'Bearer $token';
+  //     print('DEBUG: Request headers set: ${request.headers}');
+
+  //     // Add files
+  //     for (int i = 0; i < _selectedFiles.length; i++) {
+  //       final file = _selectedFiles[i];
+  //       final fileName = file.path.split('/').last;
+
+  //       print('DEBUG: Processing file $i: $fileName');
+  //       print('DEBUG: File path: ${file.path}');
+  //       print('DEBUG: File exists: ${await file.exists()}');
+
+  //       if (await file.exists()) {
+  //         final fileSize = await file.length();
+  //         print('DEBUG: File size: ${_formatFileSize(fileSize)}');
+
+  //         // Better MIME type detection
+  //         final extension = fileName.split('.').last.toLowerCase();
+  //         String mimeType;
+
+  //         if (['mp4', 'mov', 'avi', 'wmv', 'flv', 'webm'].contains(extension)) {
+  //           mimeType = 'video/$extension';
+  //         } else if (['jpg', 'jpeg'].contains(extension)) {
+  //           mimeType = 'image/jpeg';
+  //         } else if (extension == 'png') {
+  //           mimeType = 'image/png';
+  //         } else if (extension == 'gif') {
+  //           mimeType = 'image/gif';
+  //         } else if (extension == 'webp') {
+  //           mimeType = 'image/webp';
+  //         } else {
+  //           mimeType = 'application/octet-stream';
+  //         }
+
+  //         print('DEBUG: Detected MIME type: $mimeType');
+
+  //         try {
+  //           final multipartFile = await http.MultipartFile.fromPath(
+  //             'file',
+  //             file.path,
+  //             filename: fileName,
+  //             contentType: MediaType.parse(mimeType),
+  //           );
+
+  //           request.files.add(multipartFile);
+  //           print('Filename: ${multipartFile.filename}');
+  //           print('Content-Type: ${multipartFile.contentType}');
+  //           print('Length: ${multipartFile.length}');
+  //           print('Field: ${multipartFile.field}');
+  //           print('DEBUG: File $i added to request successfully');
+  //         } catch (fileError) {
+  //           print('DEBUG: Error adding file $i to request: $fileError');
+  //           _showErrorDialog('Error processing file: $fileName');
+  //           return null;
+  //         }
+  //       } else {
+  //         print('DEBUG: File does not exist: ${file.path}');
+  //         _showErrorDialog('File not found: $fileName');
+  //         return null;
+  //       }
+  //     }
+
+  //     print(
+  //       'DEBUG: All files processed. Total files in request: ${request.files.length}',
+  //     );
+  //     print('DEBUG: Request fields: ${request.fields}');
+  //     print('DEBUG: Sending request to: $uri');
+
+  //     final response = await request.send();
+  //     final responseBody = await response.stream.bytesToString();
+
+  //     print('DEBUG: Response status code: ${response.statusCode}');
+  //     print('DEBUG: Response headers: ${response.headers}');
+  //     print('DEBUG: Response body: $responseBody');
+
+  //     if (response.statusCode == 200 || response.statusCode == 201) {
+  //       try {
+  //         // Parse response to get media URL from the data field
+  //         final jsonResponse = jsonDecode(responseBody);
+  //         print('DEBUG: Parsed JSON response: $jsonResponse');
+
+  //         if (jsonResponse['status'] == 200 && jsonResponse['data'] != null) {
+  //           print(
+  //             'DEBUG: Media upload successful. URL: ${jsonResponse['data']}',
+  //           );
+  //           return jsonResponse['data']; // Returns the S3 URL
+  //         } else {
+  //           print(
+  //             'DEBUG: Media upload failed - API returned error: ${jsonResponse['message'] ?? 'Unknown error'}',
+  //           );
+  //           return null;
+  //         }
+  //       } catch (jsonError) {
+  //         print('DEBUG: Error parsing JSON response: $jsonError');
+  //         print('DEBUG: Raw response body: $responseBody');
+  //         return null;
+  //       }
+  //     } else {
+  //       print('DEBUG: Media upload failed with status ${response.statusCode}');
+  //       print('DEBUG: Error response body: $responseBody');
+  //       return null;
+  //     }
+  //   } catch (e, stackTrace) {
+  //     print('DEBUG: Media upload error: $e');
+  //     print('DEBUG: Stack trace: $stackTrace');
+  //     return null;
+  //   }
+  // }
+
   Future<void> _submitFeedback() async {
     if (!_formKey.currentState!.validate()) {
-      print('DEBUG: Form validation failed');
+      // print('DEBUG: Form validation failed');
       return;
     }
-
-    print('DEBUG: Starting feedback submission');
-    print('DEBUG: Selected files count: ${_selectedFiles.length}');
-    print('DEBUG: Form data - Subject: ${_titleController.text.trim()}');
-    print('DEBUG: Form data - Category: $_selectedCategory');
-    print('DEBUG: Form data - Description: ${_feedbackController.text.trim()}');
 
     setState(() {
       _isSubmitting = true;
     });
 
     try {
-      String? mediaUrl;
-
-      // First upload media files if any
+      // String? mediaUrl;
+      List<String>? mediaUrls;
       if (_selectedFiles.isNotEmpty) {
-        print('DEBUG: Uploading media files...');
-        mediaUrl = await _uploadMediaFiles();
-
-        if (mediaUrl == null) {
-          print('DEBUG: Media upload failed, stopping submission');
+        mediaUrls = await _uploadMediaFiles();
+        if (mediaUrls == null) {
           _showErrorDialog('Failed to upload media files. Please try again.');
           return;
         }
-
-        print('DEBUG: Media upload successful. URL: $mediaUrl');
-      } else {
-        print('DEBUG: No media files to upload');
       }
+
+      // First upload media files if any
+      // if (_selectedFiles.isNotEmpty) {
+      //   // print('DEBUG: Uploading media files...');
+      //   mediaUrl = await _uploadMediaFiles();
+
+      //   if (mediaUrl == null) {
+      //     // print('DEBUG: Media upload failed, stopping submission');
+      //     _showErrorDialog('Failed to upload media files. Please try again.');
+      //     return;
+      //   }
+
+      //   // print('DEBUG: Media upload successful. URL: $mediaUrl');
+      // } else {
+      //   print('DEBUG: No media files to upload');
+      // }
 
       // Then submit the bug report using the service
       print('DEBUG: Submitting bug report...');
@@ -855,13 +506,20 @@ class _FeedbackFormState extends State<FeedbackForm> {
         subject: _titleController.text.trim(),
         category: _selectedCategory,
         description: _feedbackController.text.trim(),
-        media: mediaUrl,
+        // media: mediaUrl,
+        media: mediaUrls?.join(','),
       );
 
       print('DEBUG: Bug report API result: $result');
 
       if (result['success'] == true) {
         print('DEBUG: Bug report submitted successfully');
+        _titleController.clear();
+        _feedbackController.clear();
+        setState(() {
+          _selectedFiles.clear();
+          _selectedCategory = 'Login'; // reset to default category
+        });
         _showSuccessDialog();
       } else {
         print('DEBUG: Bug report submission failed: ${result['error']}');
@@ -886,10 +544,12 @@ class _FeedbackFormState extends State<FeedbackForm> {
 
   void _showSuccessDialog() {
     showDialog(
+      // barrierColor: AppColors.white,
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: AppColors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -921,8 +581,11 @@ class _FeedbackFormState extends State<FeedbackForm> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-                Navigator.of(context).pop(); // Go back to previous screen
+                // Navigator.of(context).pop(); // Close dialog
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => BottomNavigation()),
+                );
               },
               style: TextButton.styleFrom(
                 backgroundColor: AppColors.colorsBlue,

@@ -11,7 +11,6 @@ import 'package:smartassist/utils/storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smartassist/services/api_srv.dart';
 import 'package:smartassist/utils/snackbar_helper.dart';
-import 'package:smartassist/utils/style_text.dart';
 import 'package:smartassist/widgets/remarks_field.dart';
 import 'package:smartassist/widgets/reusable/action_button.dart';
 import 'package:smartassist/widgets/reusable/date_button.dart';
@@ -61,9 +60,6 @@ class _FollowupsIdsState extends State<FollowupsIds> {
   @override
   void initState() {
     super.initState();
-    print(
-      'jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj',
-    );
     print(widget.leadId);
     _speech = stt.SpeechToText();
     _initSpeech();

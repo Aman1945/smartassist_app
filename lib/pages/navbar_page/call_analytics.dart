@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:smartassist/config/component/color/colors.dart';
-import 'package:smartassist/config/component/font/font.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:smartassist/pages/navbar_page/call_logs.dart';
@@ -39,6 +38,23 @@ class _CallAnalyticsState extends State<CallAnalytics>
   Map<String, dynamic>? _dashboardData;
   Map<String, dynamic>? _enquiryData;
   Map<String, dynamic>? _coldCallData;
+
+  String get analysisTitle {
+    switch (selectedTimeRange) {
+      case '1D':
+        return 'Hourly Analysis';
+      case '1W':
+        return 'Daily Analysis';
+      case '1M':
+        return 'Weekly Analysis';
+      case '1Q':
+        return 'Monthly Analysis';
+      case '1Y':
+        return 'Quarterly Analysis';
+      default:
+        return 'Analysis';
+    }
+  }
 
   @override
   void initState() {
@@ -803,7 +819,7 @@ class _CallAnalyticsState extends State<CallAnalytics>
         alignment: Alignment
             .center, // <-- Center the text vertically within the container
         padding: EdgeInsets.symmetric(
-          horizontal: 24,
+          horizontal: 14,
         ), // Adjust horizontal padding as needed
         decoration: BoxDecoration(
           color: isActive ? AppColors.colorsBlue : Colors.transparent,
@@ -824,63 +840,44 @@ class _CallAnalyticsState extends State<CallAnalytics>
 
   // ------ HOURLY ANALYSIS CHART & LEGEND --------
 
-// Replace the _buildHourlyAnalysis() method with this updated version:
-
-Widget _buildHourlyAnalysis() {
-  // Dynamic title based on selected time range
-  String getAnalysisTitle() {
-    switch (selectedTimeRange) {
-      case '1D':
-        return 'Hourly Analysis';
-      case '1W':
-        return 'Daily Analysis';
-      case '1M':
-        return 'Weekly Analysis';
-      case '1Q':
-        return 'Monthly Analysis';
-      case '1Y':
-        return 'Quarterly Analysis';
-      default:
-        return 'Analysis';
-    }
-  }
-
-  return Container(
-    margin: _responsivePadding,
-    padding: EdgeInsets.all(_isTablet ? 16 : (_isSmallScreen ? 8 : 10)),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      border: Border.all(color: Colors.grey.shade300),
-      borderRadius: BorderRadius.circular(8),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.grey.shade200,
-          blurRadius: 5,
-          spreadRadius: 1,
-        ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          getAnalysisTitle(),
-          style: TextStyle(
-            fontSize: _bodyFontSize,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey[800],
+  Widget _buildHourlyAnalysis() {
+    return Container(
+      margin: _responsivePadding,
+      padding: EdgeInsets.all(_isTablet ? 16 : (_isSmallScreen ? 8 : 10)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 5,
+            spreadRadius: 1,
           ),
-        ),
-        SizedBox(height: _isTablet ? 15 : 10),
-        SizedBox(height: _isTablet ? 15 : 10),
-        SizedBox(
-          height: _isTablet ? 300 : (_isSmallScreen ? 180 : 200),
-          child: _buildCombinedBarChart(),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Hourly Analysis',
+            style: TextStyle(
+              fontSize: _bodyFontSize,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[800],
+            ),
+          ),
+          SizedBox(height: _isTablet ? 15 : 10),
+          // ------- REMOVED _buildCallStatsRows() ---------
+          SizedBox(height: _isTablet ? 15 : 10),
+          SizedBox(
+            height: _isTablet ? 300 : (_isSmallScreen ? 180 : 200),
+            child: _buildCombinedBarChart(),
+          ),
+        ],
+      ),
+    );
+  }
   // Place these helpers in your _CallAnalyticsState class (above build method):
 
   double getIncoming(Map data) {
@@ -1132,7 +1129,8 @@ Widget _buildHourlyAnalysis() {
       padding: const EdgeInsets.only(left: 8, right: 8, top: 10, bottom: 10),
       child: LineChart(
         LineChartData(
-          clipData: FlClipData.none(),
+          // clipData: FlClipData.none(),
+          clipData: const FlClipData.all(),
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
               getTooltipItems: (touchedSpots) {
