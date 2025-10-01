@@ -821,7 +821,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No call logs found for selected SIM')),
+          SnackBar(content: Text('No SIM Card Found')),
         );
         return;
       }
@@ -1807,7 +1807,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // FAB positioned above the overlay
+
             Positioned(
               bottom: 26,
               right: 18,

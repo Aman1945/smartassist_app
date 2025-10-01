@@ -581,13 +581,7 @@ class _LicenseVarificationState extends State<LicenseVarification>
                     SizedBox(height: 16),
                     Text(
                       'Initializing camera...',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ],
-                ),
-              ),
-      ),
-    );
+                      style: TextStyle(color: Colors.white), ),],), ),), );
   }
 
   Widget _buildCameraPreview() {

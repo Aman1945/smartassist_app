@@ -824,44 +824,63 @@ class _CallAnalyticsState extends State<CallAnalytics>
 
   // ------ HOURLY ANALYSIS CHART & LEGEND --------
 
-  Widget _buildHourlyAnalysis() {
-    return Container(
-      margin: _responsivePadding,
-      padding: EdgeInsets.all(_isTablet ? 16 : (_isSmallScreen ? 8 : 10)),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade200,
-            blurRadius: 5,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Hourly Analysis',
-            style: TextStyle(
-              fontSize: _bodyFontSize,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[800],
-            ),
-          ),
-          SizedBox(height: _isTablet ? 15 : 10),
-          // ------- REMOVED _buildCallStatsRows() ---------
-          SizedBox(height: _isTablet ? 15 : 10),
-          SizedBox(
-            height: _isTablet ? 300 : (_isSmallScreen ? 180 : 200),
-            child: _buildCombinedBarChart(),
-          ),
-        ],
-      ),
-    );
+// Replace the _buildHourlyAnalysis() method with this updated version:
+
+Widget _buildHourlyAnalysis() {
+  // Dynamic title based on selected time range
+  String getAnalysisTitle() {
+    switch (selectedTimeRange) {
+      case '1D':
+        return 'Hourly Analysis';
+      case '1W':
+        return 'Daily Analysis';
+      case '1M':
+        return 'Weekly Analysis';
+      case '1Q':
+        return 'Monthly Analysis';
+      case '1Y':
+        return 'Quarterly Analysis';
+      default:
+        return 'Analysis';
+    }
   }
+
+  return Container(
+    margin: _responsivePadding,
+    padding: EdgeInsets.all(_isTablet ? 16 : (_isSmallScreen ? 8 : 10)),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      border: Border.all(color: Colors.grey.shade300),
+      borderRadius: BorderRadius.circular(8),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.shade200,
+          blurRadius: 5,
+          spreadRadius: 1,
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          getAnalysisTitle(),
+          style: TextStyle(
+            fontSize: _bodyFontSize,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[800],
+          ),
+        ),
+        SizedBox(height: _isTablet ? 15 : 10),
+        SizedBox(height: _isTablet ? 15 : 10),
+        SizedBox(
+          height: _isTablet ? 300 : (_isSmallScreen ? 180 : 200),
+          child: _buildCombinedBarChart(),
+        ),
+      ],
+    ),
+  );
+}
   // Place these helpers in your _CallAnalyticsState class (above build method):
 
   double getIncoming(Map data) {
